@@ -26,19 +26,41 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - name: Install
+        run: npm ci
+        env:
+          # Belt and braces: current playwright has no install hook, but if a
+          # future version adds one, CI has no use for browser binaries.
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
-      # The data invariants are part of the test suite, so a bad regenerate
-      # of sessions.json fails the build rather than shipping quietly.
-      - run: npm test
+      # The data invariants live in the test suite, so a bad regenerate of
+      # sessions.json fails the build rather than shipping quietly.
+      - name: Test
+        run: npm test
+
+      - name: Resolve base path
+        # Project Pages serve from /<repo>/. Derived from GITHUB_REPOSITORY rather
+        # than github.event.repository, which is not populated on workflow_dispatch.
+        run: echo "BASE_PATH=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
 
       - name: Build
-        # Vite needs the repo name as the base path on project Pages sites.
         run: npm run build
-        env:
-          BASE_PATH: /${{ github.event.repository.name }}/
+
+      - name: Verify the build produced a usable site
+        # A base-path mistake yields a dist/ that 404s every asset — invisible
+        # until someone opens the deployed page.
+        run: |
+          test -f dist/index.html || { echo "::error::dist/index.html missing"; exit 1; }
+          test -f dist/data/sessions.json || { echo "::error::conference data missing from dist"; exit 1; }
+          grep -q "${BASE_PATH}assets/" dist/index.html \
+            || { echo "::error::index.html does not reference ${BASE_PATH}assets/"; exit 1; }
+          echo "dist/ looks correct for base ${BASE_PATH}"
 
       - uses: actions/configure-pages@v5
+        with:
+          # Turn Pages on if it isn't already, rather than failing with a 404.
+          enablement: true
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

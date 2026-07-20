@@ -1,0 +1,10 @@
+import { chromium } from 'playwright'
+const b = await chromium.launch()
+const p = await b.newPage({ viewport: { width: 1280, height: 900 } })
+await p.goto('http://localhost:4400/MyConferencePlan/', { waitUntil: 'networkidle' })
+await p.waitForSelector('.session')
+await p.getByRole('tab', { name: /Tuesday/ }).click()
+await p.waitForTimeout(300)
+await p.screenshot({ path: 'e2e/shots/06-desktop-single-column.png' })
+await b.close()
+console.log('ok')
