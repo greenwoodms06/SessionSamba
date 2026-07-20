@@ -99,9 +99,10 @@ try {
     await page.waitForTimeout(200)
   })
 
-  await check('track filter cycles include -> exclude -> clear', async () => {
+  await check('track filter cycles include -> exclude -> clear (in the Filters sheet)', async () => {
     await page.getByRole('button', { name: /^Filters/ }).click()
-    const chip = page.locator('.filter-chip').first()
+    await page.waitForSelector('.sheet .filter-chip')
+    const chip = page.locator('.sheet .filter-chip').first()
     await chip.click()
     assert(await chip.evaluate((el) => el.classList.contains('is-include')), 'not included')
     await chip.click()
@@ -111,7 +112,8 @@ try {
       await chip.evaluate((el) => !el.classList.contains('is-include') && !el.classList.contains('is-exclude')),
       'not cleared',
     )
-    await page.getByRole('button', { name: /^Filters/ }).click()
+    await page.locator('.scrim').click({ position: { x: 5, y: 5 } })
+    await page.waitForTimeout(200)
   })
 
   // ---- the big one: does a pick actually survive a reload? --------------
@@ -121,13 +123,13 @@ try {
     pickedTitle = await card.locator('.session-title').innerText()
     await card.locator('.session-toggle').click()
     await page.waitForTimeout(400)
-    assert((await page.locator('.app-header-sub').innerText()).includes('1 selected'), 'not selected')
+    assert((await page.locator('.app-header-sub').innerText()).includes('1 picked'), 'not selected')
 
     await page.reload({ waitUntil: 'networkidle' })
     await page.waitForSelector('.session')
     await page.waitForTimeout(600)
     const header = await page.locator('.app-header-sub').innerText()
-    assert(header.includes('1 selected'), `after reload header was "${header}"`)
+    assert(header.includes('1 picked'), `after reload header was "${header}"`)
   })
 
   await check('the journal is really in IndexedDB, not just memory', async () => {
@@ -155,7 +157,7 @@ try {
     for (const i of [1, 2, 3]) await toggles.nth(i).click()
     await page.waitForTimeout(400)
     const header = await page.locator('.app-header-sub').innerText()
-    assert(/in conflict/.test(header), `header was "${header}"`)
+    assert(/in overlap/.test(header), `header was "${header}"`)
     assert(await page.locator('.session.is-conflicted').count() > 0, 'no conflicted card')
   })
 
@@ -164,7 +166,7 @@ try {
   await check('.ics export downloads a valid calendar with stable UIDs', async () => {
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Calendar' }).click(),
+      page.getByRole('button', { name: 'Export .ics' }).click(),
     ])
     const path = await download.path()
     icsText = readFileSync(path, 'utf8')
@@ -221,22 +223,25 @@ try {
     assert(dialog.includes('Alex'), 'sender name not shown')
     assert(/no longer in the schedule/i.test(dialog), 'unresolvable pick not surfaced before import')
 
-    await fresh.getByRole('button', { name: 'Add column' }).click()
+    await fresh.getByRole('button', { name: 'Import', exact: true }).click()
     await fresh.waitForTimeout(500)
 
-    const names = await fresh.locator('.column-name').allInnerTexts()
+    const names = await fresh.locator('.tl-col-head .label').allInnerTexts()
     assert(names.includes('Alex'), `columns were ${JSON.stringify(names)}`)
     assert(names[0] !== 'Alex', 'my column must stay leftmost as the anchor')
     // A day holding picks must advertise it, or the view reads as empty.
     assert(await fresh.locator('.day-tabs .day-count').count() > 0, 'no day counts shown')
 
-    // Their resolvable picks render; the cancelled one becomes a ghost, not a gap.
-    const body = await fresh.locator('.timeline-columns').innerText()
+    // Their resolvable picks render on the timeline...
+    const body = await fresh.locator('.timeline-inner').innerText()
     for (const id of theirs) {
       const title = sessions.find((s) => s.id === id).title
       assert(body.includes(title.slice(0, 20)), `missing "${title}"`)
     }
-    assert(/No longer in the schedule/i.test(body), 'cancelled pick silently vanished')
+    // ...the cancelled one becomes a ghost, listed (never dropped) below.
+    const whole = await fresh.locator('.app').innerText()
+    assert(/no longer in the schedule/i.test(whole), 'cancelled pick silently vanished')
+    assert(whole.includes('a-session-that-was-cancelled'), 'ghost id not shown')
     await fresh.close()
   })
 
@@ -248,24 +253,40 @@ try {
     await fresh.waitForTimeout(300)
     await fresh.getByRole('tab', { name: /Tuesday/ }).click()
     await fresh.waitForTimeout(500)
-    const names = await fresh.locator('.column-name').allInnerTexts()
+    const names = await fresh.locator('.tl-col-head .label').allInnerTexts()
     assert(names.includes('Alex'), `columns after reload: ${JSON.stringify(names)}`)
     await fresh.close()
   })
 
-  // ---- badge tier ------------------------------------------------------
-  await check('setting a badge tier marks restricted sessions without hiding them', async () => {
+  // ---- badge tier: warn, never block (SPEC §9.1) -----------------------
+  await check('an out-of-tier session warns on add but is never hidden or blocked', async () => {
     await page.getByRole('tab', { name: 'Browse' }).click()
     await page.waitForTimeout(200)
     await page.getByRole('button', { name: 'Settings' }).click()
-    await page.waitForSelector('.dialog')
-    await page.locator('.dialog select').selectOption('D')   // Discover — the most limited badge
-    await page.getByRole('button', { name: 'Done' }).click()
-    await page.waitForTimeout(400)
-    const restricted = await page.locator('.session.is-restricted').count()
-    assert(restricted > 0, 'no sessions marked restricted for a Discover badge')
+    await page.waitForSelector('.sheet')
+    const dBtn = page.locator('.sheet .tier-btn').filter({ hasText: /^D$/ })
+    await dBtn.click()   // Discover — most limited
+    assert(await dBtn.getAttribute('aria-pressed') === 'true', 'tier D did not register')
+    await page.locator('.scrim').click({ position: { x: 5, y: 5 } })
+    await page.waitForSelector('.sheet', { state: 'detached' })
+
+    // Sessions are never hidden by tier.
     const total = await page.locator('.session').count()
     assert(total === 123, `sessions must stay visible; got ${total}`)
+
+    // Adding a session the badge can't attend (access lacks 'D') warns, then proceeds.
+    const idx = await page.locator('.session').evaluateAll((nodes) =>
+      nodes.findIndex((n) => {
+        const a = n.querySelector('.access')
+        return a && !a.textContent.includes('D') && !n.classList.contains('is-picked')
+      }))
+    assert(idx >= 0, 'expected an unpicked Discover-restricted session on Tuesday')
+    await page.locator('.session').nth(idx).locator('.session-toggle').click()
+    await page.waitForSelector('.dialog', { timeout: 5000 })
+    const warn = await page.locator('.dialog').innerText()
+    assert(/badge/i.test(warn), 'tier warning not shown')
+    await page.getByRole('button', { name: 'Add anyway' }).click()
+    await page.waitForTimeout(300)
   })
 
   // ---- offline ---------------------------------------------------------
