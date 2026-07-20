@@ -108,7 +108,7 @@ export default function App() {
     if (!journal || journal.picks.length === 0) return
     if (!shouldAutoBackup()) return
     exportBackup().then((contents) => {
-      downloadFile(`openconferenceplan-backup-${new Date().toISOString().slice(0, 10)}.json`, contents)
+      downloadFile(`myconferenceplan-backup-${new Date().toISOString().slice(0, 10)}.json`, contents)
       markAutoBackup()
       setToast('Backup saved to your Downloads folder.')
     })
@@ -251,7 +251,7 @@ export default function App() {
           onSetName={(name) => commit({ ...journal, sender: { ...journal.sender, name } })}
           onBackup={async () => {
             downloadFile(
-              `openconferenceplan-backup-${new Date().toISOString().slice(0, 10)}.json`,
+              `myconferenceplan-backup-${new Date().toISOString().slice(0, 10)}.json`,
               await exportBackup(),
             )
             markAutoBackup()

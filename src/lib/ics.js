@@ -75,7 +75,7 @@ export function buildIcs(sessions, config, options = {}) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//OpenConferencePlan//EN',
+    'PRODID:-//MyConferencePlan//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${escapeText(config.name)}`,

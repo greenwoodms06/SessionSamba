@@ -7,6 +7,9 @@
  *  journal holds hand-authored notes that cannot be regenerated.
  */
 
+// Deliberately NOT renamed to match the app. This key identifies existing
+// user data on disk; changing it would orphan every saved journal — the exact
+// data-loss the whole design guards against (SPEC sect. 2.1 in spirit).
 const DB_NAME = 'openconferenceplan'
 const DB_VERSION = 1
 const STORE_JOURNALS = 'journals'   // one record per conference
@@ -136,7 +139,7 @@ export function markAutoBackup(now = Date.now()) {
 export async function exportBackup() {
   const journals = await listJournals()
   return JSON.stringify(
-    { kind: 'openconferenceplan-backup', exportedAt: new Date().toISOString(), journals },
+    { kind: 'myconferenceplan-backup', exportedAt: new Date().toISOString(), journals },
     null,
     2,
   )

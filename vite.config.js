@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: 'autoUpdate', // SPEC sect. 8.1: force-update, never sit in `waiting`
       includeAssets: ['icons/*.svg'],
       manifest: {
-        name: 'OpenConferencePlan',
-        short_name: 'ConfPlan',
+        name: 'MyConferencePlan',
+        short_name: 'MyConfPlan',
         description: 'Plan your conference schedule offline.',
         theme_color: '#111827',
         background_color: '#ffffff',
