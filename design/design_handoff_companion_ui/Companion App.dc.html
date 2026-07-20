@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9ebef;font-family:'Instrument Sans',system-ui,sans-serif}
+a{color:#3d5af1}a:hover{color:#2a41c4}
+::-webkit-scrollbar{height:6px;width:6px}::-webkit-scrollbar-thumb{background:#d5d9e2;border-radius:3px}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+input::placeholder{color:#aab0bd}
+</style>
+</helmet>
+<div style="{{ shellSt }}">
+
+  <!-- header -->
+  <div style="flex:none;padding:16px 18px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div style="min-width:0">
+        <div style="font:700 20px/1.1 'Instrument Sans';letter-spacing:-.01em">{{ confName }}</div>
+        <div style="font:500 12px 'Instrument Sans';color:#7a8090;margin-top:3px">{{ statusLine }} <sc-if value="{{ conflictCount }}" hint-placeholder-val="{{ false }}"><span style="color:#b45309">· {{ conflictCount }} overlap</span></sc-if></div>
+      </div>
+      <div style="display:flex;gap:8px;flex:none">
+        <button onClick="{{ onIcs }}" title="Export .ics" style="width:36px;height:36px;border:none;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(32,36,44,.1);font-size:15px;cursor:pointer;color:#4a5060;line-height:1">⤓</button>
+        <button onClick="{{ onSettings }}" title="Settings" style="width:36px;height:36px;border:none;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(32,36,44,.1);font-size:14px;cursor:pointer;color:#4a5060;line-height:1">⚙</button>
+      </div>
+    </div>
+    <div style="display:flex;background:#e8eaef;border-radius:12px;padding:3px;margin-top:14px">
+      <button onClick="{{ tabBrowse }}" style="{{ tabBrowseSt }}">Browse</button>
+      <button onClick="{{ tabMyday }}" style="{{ tabMydaySt }}">My day</button>
+    </div>
+  </div>
+
+  <!-- day chips -->
+  <div style="flex:none;display:flex;gap:8px;padding:12px 18px 0;overflow-x:auto">
+    <sc-for list="{{ days }}" as="d" hint-placeholder-count="5">
+      <button onClick="{{ d.onClick }}" style="{{ d.st }}">
+        <span style="{{ d.labSt }}">{{ d.label }}</span>
+        <span style="{{ d.dateSt }}">{{ d.date }}</span>
+        <sc-if value="{{ d.count }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-5px;right:-4px;background:#3d5af1;color:#fff;font:700 10px 'Instrument Sans';padding:1px 6px;border-radius:9px;box-shadow:0 0 0 2px #f5f6f8">{{ d.count }}</span></sc-if>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- change banner -->
+  <sc-if value="{{ hasChanges }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:10px;margin:12px 18px 0;padding:10px 13px;background:#eef1fe;border-radius:12px">
+      <span style="flex:1;font:500 12px/1.4 'Instrument Sans';color:#2a41c4">{{ changeBanner }}</span>
+      <button onClick="{{ openReview }}" style="flex:none;padding:7px 13px;border:none;border-radius:9px;background:#3d5af1;color:#fff;font:600 12px 'Instrument Sans';cursor:pointer">Review</button>
+    </div>
+  </sc-if>
+
+  <!-- ═══ BROWSE ═══ -->
+  <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;gap:8px;padding:12px 18px 0">
+      <input value="{{ search }}" onChange="{{ onSearch }}" placeholder="Search titles, people, rooms…" style="flex:1;min-width:0;padding:10px 14px;border:none;border-radius:12px;background:#fff;font:400 13px 'Instrument Sans';outline:none;box-shadow:0 1px 3px rgba(32,36,44,.06);color:#20242c">
+      <button onClick="{{ onFilters }}" style="{{ filterBtnSt }}">Filters{{ filterCountLabel }}</button>
+    </div>
+    <div style="flex:none;display:flex;gap:8px;padding:10px 18px 0;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;background:#e8eaef;border-radius:10px;padding:2px">
+        <button onClick="{{ setAxisList }}" style="{{ axisListSt }}">☰ List</button>
+        <button onClick="{{ setAxisTl }}" style="{{ axisTlSt }}">▤ Timeline</button>
+      </div>
+      <select value="{{ group }}" onChange="{{ onGroup }}" style="{{ groupSelSt }}">
+        <sc-for list="{{ groupOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+      </select>
+      <sc-if value="{{ isTl }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ toggleCompact }}" style="{{ compactSt }}">Compact</button>
+      </sc-if>
+    </div>
+    <div style="flex:none;padding:10px 18px 8px;font:500 11.5px 'Instrument Sans';color:#aab0bd">{{ countLine }}</div>
+
+    <!-- list · everything -->
+    <sc-if value="{{ showListAll }}" hint-placeholder-val="{{ true }}">
+      <div style="{{ listWrapSt }}">
+        <sc-for list="{{ cards }}" as="c" hint-placeholder-count="4">
+          <div style="{{ c.cardSt }}">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+              <div style="font:500 12px 'Instrument Sans';color:#7a8090">{{ c.time }} <sc-if value="{{ c.room }}" hint-placeholder-val="{{ true }}"><span style="color:#aab0bd">·</span> {{ c.room }}</sc-if></div>
+              <button onClick="{{ c.onToggle }}" style="{{ c.chkSt }}">{{ c.chk }}</button>
+            </div>
+            <div onClick="{{ c.onOpen }}" style="font:600 15px/1.3 'Instrument Sans';margin-top:2px;text-wrap:pretty;cursor:pointer">{{ c.title }}</div>
+            <sc-if value="{{ c.hasContribs }}" hint-placeholder-val="{{ false }}">
+              <div style="font:400 12.5px/1.5 'Instrument Sans';color:#7a8090;margin-top:4px"><sc-for list="{{ c.contribs }}" as="p" hint-placeholder-count="2"><a href="{{ p.u }}" style="color:#3d5af1;text-decoration:none">{{ p.n }}</a><span>{{ p.sep }}</span></sc-for>{{ c.moreLabel }}</div>
+            </sc-if>
+            <div style="display:flex;gap:6px;margin-top:9px;align-items:center;flex-wrap:wrap">
+              <sc-for list="{{ c.chips }}" as="ch" hint-placeholder-count="1"><span style="{{ ch.st }}">{{ ch.label }}</span></sc-for>
+              <sc-if value="{{ c.overlap }}" hint-placeholder-val="{{ false }}"><span style="font:600 11px 'Instrument Sans';color:#b45309;background:#fbbf2426;padding:3px 9px;border-radius:99px">◔ Overlaps {{ c.overlap }}</span></sc-if>
+              <sc-if value="{{ c.acc }}" hint-placeholder-val="{{ false }}"><span style="font:500 10.5px 'Instrument Sans';color:#aab0bd;margin-left:auto">{{ c.acc }}</span></sc-if>
+            </div>
+            <sc-if value="{{ c.picked }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+                <input value="{{ c.notes }}" onChange="{{ c.onNotes }}" placeholder="Notes for yourself…" style="flex:1;min-width:0;box-sizing:border-box;padding:8px 11px;border:1px solid #e8eaef;border-radius:10px;background:#f9fafb;font:400 12.5px 'Instrument Sans';outline:none;color:#20242c">
+                <div style="display:flex;flex:none"><sc-for list="{{ c.stars }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onClick }}" style="{{ s.st }}">★</button></sc-for></div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ emptyList }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:40px 20px;color:#aab0bd;font:500 13px 'Instrument Sans'">No sessions match — clear a filter or two.</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- list · by track -->
+    <sc-if value="{{ showListTrack }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-x:auto;overflow-y:hidden;display:flex;gap:12px;padding:2px 18px 20px;align-items:stretch">
+        <sc-for list="{{ trackCols }}" as="tc" hint-placeholder-count="3">
+          <div style="flex:none;width:252px;display:flex;flex-direction:column;min-height:0">
+            <div style="flex:none;display:flex;align-items:center;gap:7px;padding:2px 4px 8px">
+              <span style="{{ tc.dotSt }}"></span>
+              <span style="font:700 12.5px 'Instrument Sans'">{{ tc.label }}</span>
+              <span style="font:500 11px 'Instrument Sans';color:#aab0bd">{{ tc.count }}</span>
+            </div>
+            <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:8px">
+              <sc-for list="{{ tc.cards }}" as="c" hint-placeholder-count="3">
+                <div style="{{ c.cardSt }}">
+                  <div style="display:flex;justify-content:space-between;gap:8px">
+                    <div style="font:500 11.5px 'Instrument Sans';color:#7a8090">{{ c.time }}</div>
+                    <button onClick="{{ c.onToggle }}" style="{{ c.chkSt }}">{{ c.chk }}</button>
+                  </div>
+                  <div onClick="{{ c.onOpen }}" style="font:600 13.5px/1.3 'Instrument Sans';margin-top:2px;text-wrap:pretty;cursor:pointer">{{ c.title }}</div>
+                  <div style="font:400 11.5px 'Instrument Sans';color:#aab0bd;margin-top:4px">{{ c.room }}</div>
+                  <sc-if value="{{ c.overlap }}" hint-placeholder-val="{{ false }}"><div style="margin-top:6px"><span style="font:600 10.5px 'Instrument Sans';color:#b45309;background:#fbbf2426;padding:2px 8px;border-radius:99px">◔ Overlap</span></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- timeline -->
+    <sc-if value="{{ showTl }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow:auto;padding:2px 10px 20px 0">
+        <div style="display:flex;min-width:max-content">
+          <div style="{{ tlGutterSt }}">
+            <sc-for list="{{ tlGutter }}" as="g" hint-placeholder-count="4"><div style="{{ g.st }}">{{ g.label }}</div></sc-for>
+          </div>
+          <sc-for list="{{ tlCols }}" as="col" hint-placeholder-count="2">
+            <div style="flex:none;margin-right:10px">
+              <div style="display:flex;align-items:center;gap:6px;padding:0 2px 8px;position:sticky;left:0">
+                <span style="{{ col.dotSt }}"></span>
+                <span style="font:700 12px 'Instrument Sans';white-space:nowrap">{{ col.label }}</span>
+                <span style="font:500 10.5px 'Instrument Sans';color:#aab0bd">{{ col.count }}</span>
+              </div>
+              <div style="{{ col.bodySt }}">
+                <sc-for list="{{ col.blocks }}" as="b" hint-placeholder-count="3">
+                  <div style="{{ b.st }}" onClick="{{ b.onClick }}">
+                    <div style="display:flex;justify-content:space-between;gap:4px">
+                      <span style="font:600 9.5px 'Instrument Sans';color:#7a8090;white-space:nowrap">{{ b.time }}</span>
+                      <sc-if value="{{ b.conflict }}" hint-placeholder-val="{{ false }}"><span style="font:700 9.5px 'Instrument Sans';color:#b45309">◔</span></sc-if>
+                    </div>
+                    <div style="{{ b.titleSt }}">{{ b.title }}</div>
+                    <div style="font:400 9.5px 'Instrument Sans';color:#aab0bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.room }}</div>
+                    <sc-if value="{{ b.ghost }}" hint-placeholder-val="{{ false }}"><div style="font:600 9px 'Instrument Sans';color:#b45309;margin-top:2px">no longer in schedule</div></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <!-- ═══ MY DAY ═══ -->
+  <sc-if value="{{ isMyday }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;gap:8px;padding:12px 18px 0;flex-wrap:wrap;align-items:center">
+      <button onClick="{{ onLoad }}" style="padding:9px 14px;border:none;border-radius:12px;background:#fff;font:600 12.5px 'Instrument Sans';cursor:pointer;box-shadow:0 1px 3px rgba(32,36,44,.06);color:#4a5060">Load a schedule…</button>
+      <button onClick="{{ onShare }}" style="padding:9px 14px;border:none;border-radius:12px;background:#fff;font:600 12.5px 'Instrument Sans';cursor:pointer;box-shadow:0 1px 3px rgba(32,36,44,.06);color:#4a5060">Share mine</button>
+      <button onClick="{{ toggleMyCompact }}" style="{{ myCompactSt }}">Compact</button>
+    </div>
+    <sc-if value="{{ staleColumn }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;margin:10px 18px 0;padding:8px 12px;background:#fbbf2426;border-radius:10px;font:500 11.5px 'Instrument Sans';color:#92600a">⚠ Alex's schedule was shared against older conference data (14 Jun) — times may have shifted.</div>
+    </sc-if>
+    <sc-if value="{{ mydayEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:grid;place-items:center;color:#aab0bd;font:500 13px 'Instrument Sans';text-align:center;padding:0 40px">Nothing picked for this day yet.<br>Pick sessions in Browse and they land here.</div>
+    </sc-if>
+    <sc-if value="{{ mydayHas }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow:auto;padding:12px 10px 20px 0">
+        <div style="display:flex;min-width:max-content">
+          <div style="{{ myGutterSt }}">
+            <sc-for list="{{ myGutter }}" as="g" hint-placeholder-count="4"><div style="{{ g.st }}">{{ g.label }}</div></sc-for>
+          </div>
+          <sc-for list="{{ myCols }}" as="col" hint-placeholder-count="2">
+            <div style="flex:none;margin-right:10px">
+              <div style="display:flex;align-items:center;gap:6px;padding:0 2px 8px">
+                <span style="{{ col.dotSt }}"></span>
+                <span style="font:700 12px 'Instrument Sans';white-space:nowrap">{{ col.label }}</span>
+                <span style="font:500 10.5px 'Instrument Sans';color:#aab0bd">{{ col.count }}</span>
+              </div>
+              <div style="{{ col.bodySt }}">
+                <sc-for list="{{ col.blocks }}" as="b" hint-placeholder-count="3">
+                  <div style="{{ b.st }}" onClick="{{ b.onClick }}">
+                    <div style="display:flex;justify-content:space-between;gap:4px">
+                      <span style="font:600 9.5px 'Instrument Sans';color:#7a8090;white-space:nowrap">{{ b.time }}</span>
+                      <sc-if value="{{ b.conflict }}" hint-placeholder-val="{{ false }}"><span style="font:700 9.5px 'Instrument Sans';color:#b45309">◔</span></sc-if>
+                    </div>
+                    <div style="{{ b.titleSt }}">{{ b.title }}</div>
+                    <div style="font:400 9.5px 'Instrument Sans';color:#aab0bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.room }}</div>
+                    <sc-if value="{{ b.ghost }}" hint-placeholder-val="{{ false }}"><div style="font:600 9px 'Instrument Sans';color:#b45309;margin-top:2px">no longer in schedule</div></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <!-- filters sheet -->
+  <sc-if value="{{ filtersOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheets }}" style="position:absolute;inset:0;background:rgba(32,36,44,.35);border-radius:inherit;z-index:20"></div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(480px,100%);box-sizing:border-box;background:#fff;border-radius:20px 20px 0 0;padding:18px 20px 24px;z-index:21;box-shadow:0 -8px 30px rgba(32,36,44,.15);max-height:70%;overflow-y:auto">
+      <div style="width:36px;height:4px;background:#e8eaef;border-radius:2px;margin:0 auto 14px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font:700 15px 'Instrument Sans'">Filters</div>
+        <button onClick="{{ clearFilters }}" style="border:none;background:none;font:600 12.5px 'Instrument Sans';color:#3d5af1;cursor:pointer">Clear all</button>
+      </div>
+      <button onClick="{{ toggleOnly }}" style="{{ onlySt }}"><span style="{{ onlyBoxSt }}">{{ onlyChk }}</span> Only my picks</button>
+      <div style="font:500 11.5px 'Instrument Sans';color:#aab0bd;margin:16px 0 8px">Tap a track to include, again to exclude, once more to clear.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        <sc-for list="{{ filterTracks }}" as="t" hint-placeholder-count="6">
+          <button onClick="{{ t.onClick }}" style="{{ t.st }}">{{ t.label }} <span style="{{ t.cntSt }}">{{ t.count }}</span></button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- settings sheet -->
+  <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheets }}" style="position:absolute;inset:0;background:rgba(32,36,44,.35);border-radius:inherit;z-index:20"></div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(480px,100%);box-sizing:border-box;background:#fff;border-radius:20px 20px 0 0;padding:18px 20px 24px;z-index:21;box-shadow:0 -8px 30px rgba(32,36,44,.15)">
+      <div style="width:36px;height:4px;background:#e8eaef;border-radius:2px;margin:0 auto 14px"></div>
+      <div style="font:700 15px 'Instrument Sans'">Settings</div>
+      <div style="font:500 11.5px 'Instrument Sans';color:#aab0bd;margin:14px 0 8px">My badge tier — sessions outside it warn, never block</div>
+      <div style="display:flex;gap:7px">
+        <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.onClick }}" style="{{ t.st }}">{{ t.label }}</button></sc-for>
+      </div>
+      <div style="margin-top:16px;padding:11px 13px;background:#f5f6f8;border-radius:12px;font:500 12px/1.6 'Instrument Sans';color:#4a5060">Persistent storage: <span style="color:#0d9488;font-weight:600">granted</span> · 2.1 MB used<br><span style="color:#aab0bd">Auto-backup runs at the end of each conference day.</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button onClick="{{ onBackup }}" style="flex:1;padding:11px 0;border:none;border-radius:12px;background:#3d5af1;color:#fff;font:600 13px 'Instrument Sans';cursor:pointer">Back up now</button>
+        <button onClick="{{ onIcs }}" style="flex:1;padding:11px 0;border:1.5px solid #e8eaef;border-radius:12px;background:#fff;font:600 13px 'Instrument Sans';cursor:pointer;color:#20242c">Export .ics</button>
+      </div>
+      <button onClick="{{ onSimulate }}" style="width:100%;margin-top:8px;padding:10px 0;border:1.5px dashed #d5d9e2;border-radius:12px;background:none;font:600 12px 'Instrument Sans';cursor:pointer;color:#7a8090">Demo: simulate a schedule update</button>
+    </div>
+  </sc-if>
+
+  <!-- change review sheet -->
+  <sc-if value="{{ reviewOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeReview }}" style="position:absolute;inset:0;background:rgba(32,36,44,.35);border-radius:inherit;z-index:26"></div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(480px,100%);box-sizing:border-box;background:#fff;border-radius:20px 20px 0 0;padding:18px 20px 24px;z-index:27;box-shadow:0 -8px 30px rgba(32,36,44,.15);max-height:75%;overflow-y:auto">
+      <div style="width:36px;height:4px;background:#e8eaef;border-radius:2px;margin:0 auto 14px"></div>
+      <div style="font:700 15px 'Instrument Sans'">Your picks changed</div>
+      <div style="font:400 12.5px/1.5 'Instrument Sans';color:#7a8090;margin-top:4px">The schedule was updated. Only your affected picks are listed — acknowledge each and it won't flag again.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+        <sc-for list="{{ changeItems }}" as="c" hint-placeholder-count="2">
+          <div style="border:1.5px solid #e8eaef;border-radius:14px;padding:12px 14px">
+            <div style="font:600 13.5px/1.35 'Instrument Sans';text-wrap:pretty">{{ c.title }}</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+              <sc-for list="{{ c.diffs }}" as="d" hint-placeholder-count="1">
+                <div style="font:400 12.5px 'Instrument Sans';color:#4a5060"><span style="color:#aab0bd;display:inline-block;width:48px">{{ d.field }}</span> <span style="text-decoration:line-through;color:#aab0bd">{{ d.from }}</span> <span style="color:#aab0bd">→</span> <span style="font-weight:600">{{ d.to }}</span></div>
+              </sc-for>
+            </div>
+            <button onClick="{{ c.onAck }}" style="margin-top:10px;padding:7px 13px;border:1.5px solid #e8eaef;border-radius:9px;background:#fff;font:600 12px 'Instrument Sans';cursor:pointer;color:#20242c">Got it</button>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ ackAll }}" style="width:100%;margin-top:14px;padding:11px 0;border:none;border-radius:12px;background:#3d5af1;color:#fff;font:600 13px 'Instrument Sans';cursor:pointer">Acknowledge all</button>
+    </div>
+  </sc-if>
+
+  <!-- session detail sheet -->
+  <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDetail }}" style="position:absolute;inset:0;background:rgba(32,36,44,.35);border-radius:inherit;z-index:24"></div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(480px,100%);box-sizing:border-box;background:#fff;border-radius:20px 20px 0 0;padding:18px 20px 24px;z-index:25;box-shadow:0 -8px 30px rgba(32,36,44,.15);max-height:78%;overflow-y:auto">
+      <div style="width:36px;height:4px;background:#e8eaef;border-radius:2px;margin:0 auto 14px"></div>
+      <div style="font:500 12.5px 'Instrument Sans';color:#7a8090">{{ dTime }} <sc-if value="{{ dRoom }}" hint-placeholder-val="{{ false }}"><span style="color:#aab0bd">·</span> {{ dRoom }}</sc-if></div>
+      <div style="font:700 18px/1.3 'Instrument Sans';margin-top:4px;text-wrap:pretty">{{ dTitle }}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <sc-for list="{{ dChips }}" as="ch" hint-placeholder-count="1"><span style="{{ ch.st }}">{{ ch.label }}</span></sc-for>
+        <sc-if value="{{ dOverlap }}" hint-placeholder-val="{{ false }}"><span style="font:600 11px 'Instrument Sans';color:#b45309;background:#fbbf2426;padding:3px 9px;border-radius:99px">◔ {{ dOverlap }}</span></sc-if>
+      </div>
+      <sc-if value="{{ dDesc }}" hint-placeholder-val="{{ false }}">
+        <div style="font:400 13px/1.55 'Instrument Sans';color:#4a5060;margin-top:12px">{{ dDesc }}</div>
+      </sc-if>
+      <sc-if value="{{ dHasContribs }}" hint-placeholder-val="{{ false }}">
+        <div style="font:500 11.5px 'Instrument Sans';color:#aab0bd;margin:14px 0 4px">Contributors</div>
+        <div style="font:400 13px/1.6 'Instrument Sans'"><sc-for list="{{ dContribs }}" as="p" hint-placeholder-count="2"><a href="{{ p.u }}" style="color:#3d5af1;text-decoration:none">{{ p.n }}</a><span>{{ p.sep }}</span></sc-for></div>
+      </sc-if>
+      <sc-if value="{{ dAcc }}" hint-placeholder-val="{{ false }}"><div style="{{ dAccSt }}">{{ dAcc }}</div></sc-if>
+      <sc-if value="{{ dPicked }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:8px;margin-top:14px;align-items:center">
+          <input value="{{ dNotes }}" onChange="{{ dOnNotes }}" placeholder="Notes for yourself…" style="flex:1;min-width:0;box-sizing:border-box;padding:9px 12px;border:1px solid #e8eaef;border-radius:10px;background:#f9fafb;font:400 13px 'Instrument Sans';outline:none;color:#20242c">
+          <div style="display:flex;flex:none"><sc-for list="{{ dStars }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onClick }}" style="{{ s.st }}">★</button></sc-for></div>
+        </div>
+      </sc-if>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button onClick="{{ dOnToggle }}" style="{{ dBtnSt }}">{{ dBtn }}</button>
+        <a href="#" style="flex:none;display:grid;place-items:center;padding:0 16px;border:1.5px solid #e8eaef;border-radius:12px;font:600 13px 'Instrument Sans';color:#3d5af1;text-decoration:none">Session page ↗</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- import confirm dialog -->
+  <sc-if value="{{ importOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(32,36,44,.4);border-radius:inherit;z-index:30;display:grid;place-items:center;padding:24px">
+      <div style="background:#fff;border-radius:18px;padding:20px;width:100%;max-width:320px;box-sizing:border-box;box-shadow:0 12px 40px rgba(32,36,44,.25)">
+        <div style="font:700 15px/1.35 'Instrument Sans'">{{ importTitle }}</div>
+        <div style="font:500 12.5px 'Instrument Sans';color:#7a8090;margin-top:4px">{{ importMeta }}</div>
+        <sc-for list="{{ importChoices }}" as="o" hint-placeholder-count="2">
+          <button onClick="{{ o.onClick }}" style="{{ o.st }}">
+            <span style="{{ o.dotSt }}"></span><span style="font:600 13px 'Instrument Sans';color:#20242c">{{ o.label }}</span>
+            <div style="font:400 11.5px 'Instrument Sans';color:#7a8090;margin:3px 0 0 22px">{{ o.sub }}</div>
+          </button>
+        </sc-for>
+        <div style="font:400 11.5px/1.5 'Instrument Sans';color:#aab0bd;margin-top:12px">{{ importNote }}</div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button onClick="{{ cancelImport }}" style="flex:1;padding:10px 0;border:1.5px solid #e8eaef;border-radius:12px;background:#fff;font:600 13px 'Instrument Sans';cursor:pointer;color:#20242c">Cancel</button>
+          <button onClick="{{ confirmImport }}" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#3d5af1;color:#fff;font:600 13px 'Instrument Sans';cursor:pointer">Import</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- tier warning -->
+  <sc-if value="{{ warnOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(32,36,44,.4);border-radius:inherit;z-index:30;display:grid;place-items:center;padding:24px">
+      <div style="background:#fff;border-radius:18px;padding:20px;max-width:300px;box-shadow:0 12px 40px rgba(32,36,44,.25)">
+        <div style="font:700 15px/1.35 'Instrument Sans'">Outside your badge tier</div>
+        <div style="font:400 13px/1.5 'Instrument Sans';color:#7a8090;margin-top:6px">{{ warnText }}</div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button onClick="{{ cancelWarn }}" style="flex:1;padding:10px 0;border:1.5px solid #e8eaef;border-radius:12px;background:#fff;font:600 13px 'Instrument Sans';cursor:pointer;color:#20242c">Cancel</button>
+          <button onClick="{{ confirmWarn }}" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#3d5af1;color:#fff;font:600 13px 'Instrument Sans';cursor:pointer">Add anyway</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- toast -->
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:#20242c;color:#fff;font:500 12.5px 'Instrument Sans';padding:10px 16px;border-radius:12px;z-index:40;white-space:nowrap;animation:toastin .2s ease;box-shadow:0 6px 20px rgba(32,36,44,.3)">{{ toast }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 402, &quot;height&quot;: 860}, &quot;showDemoImport&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo data&quot;}, &quot;use24hTime&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Display&quot;}, &quot;hourScale&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 1.5, &quot;min&quot;: 0.9, &quot;max&quot;: 2.6, &quot;step&quot;: 0.1, &quot;unit&quot;: &quot;px/min&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Display&quot;}}">
+class Component extends DCLogic {
+  state = {
+    tab: 'browse', day: '2026-07-21', axis: 'list', group: 'all',
+    compact: false, myCompact: false, search: '', filtersOpen: false,
+    settingsOpen: false, onlyPicks: false, trackModes: {}, tier: 'FC',
+    warn: null, toast: '', detail: null, importOpen: false, importChoice: 'replace',
+    reviewOpen: false,
+    changes: [
+      { i: 't4', diffs: [{ field: 'Room', from: 'Petree D', to: 'Petree C' }] },
+      { i: 't3', diffs: [{ field: 'Starts', from: '9:00 AM', to: '9:30 AM' }, { field: 'Ends', from: '10:30 AM', to: '11:00 AM' }] }
+    ],
+    picks: { t2: { notes: 'Ask about VR splat pipelines' }, t3: { notes: '' }, t4: { notes: '' } }
+  };
+
+  DAYS = [
+    { key: '2026-07-19', label: 'Sun', date: '19' },
+    { key: '2026-07-20', label: 'Mon', date: '20' },
+    { key: '2026-07-21', label: 'Tue', date: '21' },
+    { key: '2026-07-22', label: 'Wed', date: '22' },
+    { key: '2026-07-23', label: 'Thu', date: '23' }
+  ];
+  TC = {
+    'Birds of a Feather': '#c2570c', 'Course': '#7c3aed', 'Technical Paper': '#4d7c0f',
+    "Educator's Forum": '#0891b2', 'Pathfinders': '#0d9488', 'Technical Workshop': '#be185d',
+    'Real-Time Live!': '#e11d48', 'Keynote Speaker': '#b45309', 'Emerging Technologies': '#0369a1',
+    'Production Session': '#a16207', 'Poster': '#65a30d', 'Art Gallery': '#c026d3'
+  };
+  SESS = [
+    { i: 't1', d: '2026-07-21', s: '8:00', e: '12:00', t: 'Pathfinders', tr: ['Pathfinders'], l: 'West Hall Lobby', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 't2', d: '2026-07-21', s: '8:30', e: '10:00', t: 'From Splats to Worlds: Advanced 3DGS Applications', tr: ['Birds of a Feather'], l: 'Room 518', a: ['FCS', 'FC', 'E'], c: ['Michael Rubloff', 'Ian Williams', 'Amanda Morgan', 'Daniel Zhong', 'Dr. Cai'], desc: 'An open discussion on taking 3D Gaussian Splatting beyond captures — world-scale scenes, streaming, and authoring workflows.' },
+    { i: 't3', d: '2026-07-21', s: '9:00', e: '10:30', t: '3D Jobs Outside of Entertainment — A Panel by The 3D Artist Community', tr: ['Birds of a Feather'], l: 'Room 513', a: ['FCS', 'FC', 'E'], c: ['Michael Tanzillo'] },
+    { i: 't4', d: '2026-07-21', s: '9:00', e: '12:15', t: 'Advances in Real-time Rendering in Games, Part I', tr: ['Course'], l: 'Petree D', a: ['FCS', 'FC'], c: ['Natalya Tatarchuk', 'Jon Greenberg', 'Daniel Craig', 'Michał Olejnik'], desc: 'The long-running course on state-of-the-art real-time rendering techniques shipping in current game engines.' },
+    { i: 't5', d: '2026-07-21', s: '9:00', e: '10:30', t: 'Code & Dev 1', tr: ["Educator's Forum"], l: 'Room 501 ABC', a: ['FCS', 'FC', 'E'], c: [] },
+    { i: 't6', d: '2026-07-21', s: '9:00', e: '10:30', t: 'Fluid Reconstruction & Optimization', tr: ['Technical Paper'], l: 'Room 408 A', a: ['FCS', 'FC'], c: [] },
+    { i: 't7', d: '2026-07-21', s: '9:00', e: '10:30', t: 'Generative 3D (2)', tr: ['Technical Paper'], l: 'Room 403 B', a: ['FCS', 'FC'], c: [] },
+    { i: 't8', d: '2026-07-21', s: '9:00', e: '12:15', t: 'Human-AI Co-Creation in Generative Art: Graphics Methods, Systems, and Applications', tr: ['Technical Workshop'], l: 'Room 406 AB', a: ['FCS', 'FC'], c: ['Ying Jiang', 'Jiayin Lu', 'Yin Yang', 'Hongbo Fu'] },
+    { i: 't9', d: '2026-07-21', s: '9:00', e: '12:15', t: 'Hydra in Production', tr: ['Course'], l: 'Room 515 A', a: ['FCS', 'FC'], c: [] },
+    { i: 't10', d: '2026-07-21', s: '9:00', e: '10:30', t: 'Layouts & Procedural', tr: ['Technical Paper'], l: 'Room 403 A', a: ['FCS', 'FC'], c: [] },
+    { i: 't11', d: '2026-07-21', s: '10:45', e: '12:15', t: 'Real-Time Live! Audition', tr: ['Real-Time Live!'], l: 'Room 510', a: ['FCS'], c: [] },
+    { i: 't12', d: '2026-07-21', s: '12:15', e: '13:15', t: "Educators' Lunch Roundtable", tr: ['Birds of a Feather'], l: 'Room 501 ABC', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 't13', d: '2026-07-21', s: '13:00', e: '14:00', t: 'Keynote: The Next Real', tr: ['Keynote Speaker'], l: 'West Hall B', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 't14', d: '2026-07-21', s: '12:30', e: '14:30', t: 'Haptic Worlds — Emerging Tech Demos', tr: ['Emerging Technologies', 'Technical Paper'], l: 'ETech Hall', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 't15', d: '2026-07-21', s: '14:00', e: '15:30', t: '3D Gaussian Splatting I', tr: ['Technical Paper'], l: 'Room 408 A', a: ['FCS', 'FC'], c: ['Zheng Wei'] },
+    { i: 't16', d: '2026-07-21', s: '14:00', e: '17:15', t: 'Advances in Real-time Rendering in Games, Part II', tr: ['Course'], l: 'Petree D', a: ['FCS', 'FC'], c: ['Natalya Tatarchuk'] },
+    { i: 'm1', d: '2026-07-20', s: '9:00', e: '10:30', t: 'Opening Keynote', tr: ['Keynote Speaker'], l: 'West Hall B', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 'm2', d: '2026-07-20', s: '10:45', e: '12:15', t: 'Neural Rendering in Production', tr: ['Course'], l: 'Room 515 B', a: ['FCS', 'FC'], c: [] },
+    { i: 'm3', d: '2026-07-20', s: '14:00', e: '15:30', t: 'Across the Frame: Production Session', tr: ['Production Session'], l: 'Petree C', a: ['FCS', 'FC', 'E'], c: [] },
+    { i: 'm4', d: '2026-07-20', s: '16:00', e: '17:00', t: 'Posters Fast Forward', tr: ['Poster'], l: 'Concourse', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 's1', d: '2026-07-19', s: '9:00', e: '10:00', t: 'Pathfinders Welcome', tr: ['Pathfinders'], l: 'West Hall Lobby', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 's2', d: '2026-07-19', s: '10:30', e: '12:15', t: 'An Introduction to Neural Shading', tr: ['Course'], l: 'Room 515 A', a: ['FCS'], c: [] },
+    { i: 'w1', d: '2026-07-22', s: '9:00', e: '10:30', t: 'Technical Papers: Simulation', tr: ['Technical Paper'], l: 'Room 408 A', a: ['FCS', 'FC'], c: [] },
+    { i: 'w2', d: '2026-07-22', s: '11:00', e: '12:00', t: 'Art Gallery Walkthrough', tr: ['Art Gallery'], l: 'South Hall', a: ['FCS', 'FC', 'E', 'D'], c: [] },
+    { i: 'w3', d: '2026-07-22', s: '18:00', e: '19:30', t: 'Real-Time Live!', tr: ['Real-Time Live!'], l: 'West Hall B', a: ['FCS', 'FC', 'E'], c: [] },
+    { i: 'h1', d: '2026-07-23', s: '14:00', e: '15:30', t: 'Closing Panel: Where Graphics Goes Next', tr: ['Birds of a Feather'], l: 'Petree D', a: ['FCS', 'FC', 'E', 'D'], c: [] }
+  ];
+  // Column facets — in production declared by config.json, derived from session fields.
+  FACETS = [
+    { value: 'all', label: 'Everything', key: null },
+    { value: 'track', label: 'By track', key: s => s.tr },
+    { value: 'room', label: 'By room', key: s => [s.l || 'TBD'] }
+  ];
+  ALEX = { name: 'Alex', color: '#8b5cf6', picks: ['t1', 't13', 't15'], ghosts: [{ d: '2026-07-21', s: '11:00', e: '12:00', t: 'Neural Materials Roundtable', l: 'Room 512' }] };
+
+  componentDidMount() {
+    this._onR = () => this.setState({ wide: window.innerWidth >= 760 });
+    this._onR();
+    window.addEventListener('resize', this._onR);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onR); }
+  tmin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+  fmt(t) {
+    const m = this.tmin(t);
+    if (this.props.use24hTime) return t;
+    const h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0');
+    return `${((h + 11) % 12) + 1}:${mm} ${h < 12 ? 'AM' : 'PM'}`;
+  }
+  fmtHour(m) {
+    if (this.props.use24hTime) return `${Math.floor(m / 60)}:00`;
+    const h = Math.floor(m / 60);
+    return `${((h + 11) % 12) + 1} ${h < 12 ? 'AM' : 'PM'}`;
+  }
+  tcolor(tr) { return this.TC[tr[0]] || '#64748b'; }
+  toast(msg) {
+    clearTimeout(this._tt);
+    this.setState({ toast: msg });
+    this._tt = setTimeout(() => this.setState({ toast: '' }), 2600);
+  }
+  overlapsOf(day) {
+    const picked = this.SESS.filter(s => s.d === day && this.state.picks[s.i]);
+    const map = {};
+    for (const a of picked) for (const b of picked) {
+      if (a.i !== b.i && this.tmin(a.s) < this.tmin(b.e) && this.tmin(b.s) < this.tmin(a.e)) {
+        if (!map[a.i]) map[a.i] = b.t;
+      }
+    }
+    return map;
+  }
+  addPick(s) {
+    // journal pick shape (spec §5): notes + rating + tags ride together, exportable as one unit
+    this.setState(st => ({ picks: { ...st.picks, [s.i]: { notes: '', rating: 0, tags: [] } }, warn: null }));
+  }
+  starsFor(sid) {
+    const r = this.state.picks[sid]?.rating || 0;
+    return [1, 2, 3, 4, 5].map(n => ({
+      onClick: () => this.setState(p => ({ picks: { ...p.picks, [sid]: { ...p.picks[sid], rating: p.picks[sid].rating === n ? 0 : n } } })),
+      st: {
+        border: 'none', background: 'none', cursor: 'pointer', padding: '0 1px', fontSize: 15, lineHeight: 1,
+        color: n <= r ? '#f59e0b' : '#d5d9e2'
+      }
+    }));
+  }
+  togglePick(s) {
+    if (this.state.picks[s.i]) {
+      this.setState(st => { const p = { ...st.picks }; delete p[s.i]; return { picks: p }; });
+    } else if (s.a && !s.a.includes(this.state.tier)) {
+      this.setState({ warn: s });
+    } else this.addPick(s);
+  }
+
+  // Shared column-timeline layout. cols: [{key,label,color,items:[{sm,em,...session, ghost?}]}]
+  layout(cols, compact) {
+    const all = cols.flatMap(c => c.items);
+    if (!all.length) return { h: 0, cols: [], gutter: [] };
+    const ppm = this.props.hourScale ?? 1.5;
+    const start = Math.floor(Math.min(...all.map(x => x.sm)) / 60) * 60;
+    const end = Math.ceil(Math.max(...all.map(x => x.em)) / 60) * 60;
+    const pts = new Set([start, end]);
+    all.forEach(x => { pts.add(x.sm); pts.add(x.em); });
+    for (let h = start; h <= end; h += 60) pts.add(h);
+    const P = [...pts].sort((a, b) => a - b);
+    const segs = []; let y = 0;
+    for (let i = 0; i < P.length - 1; i++) {
+      const t0 = P[i], t1 = P[i + 1], dur = t1 - t0;
+      const covered = all.some(x => x.sm < t1 && x.em > t0);
+      const h = covered ? dur * ppm : (compact ? Math.min(dur * ppm, 16) : dur * ppm);
+      segs.push({ t0, t1, y0: y, h });
+      y += h;
+    }
+    const Y = t => {
+      const sg = segs.find(s => t >= s.t0 && t <= s.t1) || segs[segs.length - 1];
+      return sg.y0 + ((t - sg.t0) / (sg.t1 - sg.t0)) * sg.h;
+    };
+    const gutter = []; let lastY = -30;
+    for (let h = start; h <= end; h += 60) {
+      const gy = Y(h);
+      if (gy - lastY >= 26) {
+        gutter.push({ label: this.fmtHour(h), st: { position: 'absolute', top: gy - 6, right: 8, font: "500 10px 'Instrument Sans'", color: '#aab0bd', whiteSpace: 'nowrap' } });
+        lastY = gy;
+      }
+    }
+    const laneW = cols.length > 1 ? 140 : 158;
+    const outCols = cols.map(c => {
+      const items = [...c.items].sort((a, b) => a.sm - b.sm || b.em - a.em);
+      const laneEnds = [];
+      const blocks = items.map(it => {
+        let lane = laneEnds.findIndex(e => e <= it.sm);
+        if (lane === -1) { lane = laneEnds.length; laneEnds.push(it.em); } else laneEnds[lane] = it.em;
+        return { it, lane };
+      });
+      const nLanes = Math.max(1, laneEnds.length);
+      const width = nLanes * (laneW + 6) - 6;
+      return { c, blocks, laneW, width };
+    });
+    return { h: y, cols: outCols, gutter, Y };
+  }
+
+  blockSt(it, x, top, w, hgt) {
+    const base = {
+      position: 'absolute', left: x, top: top + 1, width: w, height: Math.max(hgt - 4, 30),
+      boxSizing: 'border-box', borderRadius: 8, padding: '4px 7px', overflow: 'hidden', cursor: 'pointer'
+    };
+    if (it.ghost) return { ...base, background: '#f5f6f8', border: '1.5px dashed #aab0bd' };
+    const col = this.tcolor(it.tr);
+    return {
+      ...base, background: it.picked ? '#eef1fe' : '#fff',
+      borderLeft: `3px solid ${col}`,
+      boxShadow: it.conflict ? '0 0 0 1.5px #d97706' : it.picked ? '0 0 0 1.5px #3d5af1' : '0 1px 2px rgba(32,36,44,.08)'
+    };
+  }
+
+  renderCols(rawCols, compact, onBlock) {
+    const L = this.layout(rawCols, compact);
+    const cols = L.cols.map(({ c, blocks, laneW, width }) => ({
+      label: c.label, count: c.items.length,
+      dotSt: { width: 8, height: 8, borderRadius: '50%', background: c.color, flex: 'none' },
+      bodySt: { position: 'relative', width, height: L.h, background: c.tint || 'transparent', borderRadius: 10 },
+      blocks: blocks.map(({ it, lane }) => ({
+        time: this.fmt(it.s), title: it.t, room: it.l || '',
+        conflict: !!it.conflict, ghost: !!it.ghost,
+        titleSt: {
+          font: "600 11px/1.25 'Instrument Sans'", marginTop: 1, overflow: 'hidden',
+          display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+          textDecoration: it.ghost ? 'line-through' : 'none', color: it.ghost ? '#7a8090' : '#20242c'
+        },
+        st: this.blockSt(it, lane * (laneW + 6), L.Y(it.sm), laneW, L.Y(it.em) - L.Y(it.sm)),
+        onClick: onBlock && !it.ghost ? () => onBlock(it) : () => {}
+      }))
+    }));
+    const gutterSt = { flex: 'none', width: 50, position: 'relative', height: L.h, marginTop: 30 };
+    return { cols, gutter: L.gutter, gutterSt };
+  }
+
+  seg(active) {
+    return {
+      padding: '6px 11px', border: 'none', borderRadius: 8, cursor: 'pointer',
+      font: `600 11.5px 'Instrument Sans'`, color: active ? '#20242c' : '#7a8090',
+      background: active ? '#fff' : 'transparent', boxShadow: active ? '0 1px 2px rgba(32,36,44,.1)' : 'none'
+    };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const day = st.day;
+    const overlaps = this.overlapsOf(day);
+    const q = st.search.trim().toLowerCase();
+    const inc = Object.keys(st.trackModes).filter(k => st.trackModes[k] === 'inc');
+    const exc = Object.keys(st.trackModes).filter(k => st.trackModes[k] === 'exc');
+    const daySess = this.SESS.filter(s => s.d === day).sort((a, b) => this.tmin(a.s) - this.tmin(b.s));
+    const filtered = daySess.filter(s => {
+      if (st.onlyPicks && !st.picks[s.i]) return false;
+      if (inc.length && !s.tr.some(t => inc.includes(t))) return false;
+      if (s.tr.some(t => exc.includes(t))) return false;
+      if (q && !(s.t.toLowerCase().includes(q) || (s.l || '').toLowerCase().includes(q) || s.c.some(n => n.toLowerCase().includes(q)))) return false;
+      return true;
+    });
+    const pickCount = Object.keys(st.picks).length;
+    const conflictCount = new Set(Object.keys(this.overlapsOf(day))).size;
+
+    const cardFor = (s, mini) => {
+      const picked = !!st.picks[s.i];
+      const ov = overlaps[s.i];
+      const contribs = s.c.slice(0, 3).map((n, i, arr) => ({ n, u: '#', sep: i < arr.length - 1 ? ', ' : '' }));
+      return {
+        id: s.i, time: `${this.fmt(s.s)} – ${this.fmt(s.e)}`, room: s.l || '', title: s.t,
+        picked, notes: st.picks[s.i]?.notes || '',
+        hasContribs: !mini && s.c.length > 0, contribs,
+        moreLabel: s.c.length > 3 ? ` and ${s.c.length - 3} more` : '',
+        chips: s.tr.map(t => {
+          const c = this.TC[t] || '#64748b';
+          return { label: t, st: { font: "600 11px 'Instrument Sans'", color: c, background: c + '14', padding: '3px 9px', borderRadius: 99 } };
+        }),
+        overlap: ov ? `“${ov.length > 22 ? ov.slice(0, 22) + '…' : ov}”` : '',
+        acc: s.a ? s.a.join(' · ') : '',
+        cardSt: {
+          background: '#fff', borderRadius: 16, padding: mini ? '11px 13px' : '13px 15px',
+          boxShadow: (picked ? '0 0 0 1.5px #3d5af1, ' : ov ? '0 0 0 1.5px #d9770655, ' : '') + '0 1px 3px rgba(32,36,44,.06)'
+        },
+        chkSt: {
+          flex: 'none', width: mini ? 22 : 24, height: mini ? 22 : 24, borderRadius: '50%', cursor: 'pointer',
+          border: picked ? 'none' : '1.5px solid #d5d9e2', background: picked ? '#3d5af1' : 'transparent',
+          color: '#fff', fontSize: 12, lineHeight: 1, display: 'grid', placeItems: 'center', padding: 0
+        },
+        chk: picked ? '✓' : '',
+        onToggle: () => this.togglePick(s),
+        onOpen: () => this.setState({ detail: s.i }),
+        stars: picked ? this.starsFor(s.i) : [],
+        onNotes: e => {
+          const v = e.target.value;
+          this.setState(p => ({ picks: { ...p.picks, [s.i]: { ...p.picks[s.i], notes: v } } }));
+        }
+      };
+    };
+
+    const isTl = st.axis === 'tl';
+    const facet = this.FACETS.find(f => f.value === st.group) || this.FACETS[0];
+    const facetGroups = () => {
+      const keys = [...new Set(filtered.flatMap(s => facet.key(s)))].sort();
+      return keys.map(k => ({
+        key: k,
+        color: st.group === 'track' ? (this.TC[k] || '#64748b') : '#64748b',
+        sessions: filtered.filter(s => facet.key(s).includes(k))
+      }));
+    };
+    // timeline columns (browse)
+    let tl = { cols: [], gutter: [], gutterSt: {} };
+    if (st.tab === 'browse' && isTl && filtered.length) {
+      const mkItem = s => ({ ...s, sm: this.tmin(s.s), em: this.tmin(s.e), picked: !!st.picks[s.i], conflict: !!overlaps[s.i] });
+      const raw = facet.key
+        ? facetGroups().map(g => ({ label: g.key, color: g.color, items: g.sessions.map(mkItem) }))
+        : [{ label: 'All sessions', color: '#3d5af1', items: filtered.map(mkItem) }];
+      tl = this.renderCols(raw, st.compact, it => this.setState({ detail: it.i }));
+    }
+    // grouped list columns
+    let trackCols = [];
+    if (st.tab === 'browse' && !isTl && facet.key) {
+      trackCols = facetGroups().map(g => ({
+        label: g.key, count: g.sessions.length,
+        dotSt: { width: 8, height: 8, borderRadius: '50%', background: g.color, flex: 'none' },
+        cards: g.sessions.map(s => cardFor(s, true))
+      }));
+    }
+    // my day
+    const showAlex = this.props.showDemoImport ?? true;
+    const myPicked = daySess.filter(s => st.picks[s.i]).map(s => ({ ...s, sm: this.tmin(s.s), em: this.tmin(s.e), picked: true, conflict: !!overlaps[s.i] }));
+    const alexItems = showAlex ? [
+      ...this.SESS.filter(s => s.d === day && this.ALEX.picks.includes(s.i)).map(s => ({ ...s, sm: this.tmin(s.s), em: this.tmin(s.e) })),
+      ...this.ALEX.ghosts.filter(g => g.d === day).map(g => ({ ...g, sm: this.tmin(g.s), em: this.tmin(g.e), ghost: true, tr: [] }))
+    ] : [];
+    const myRaw = [{ label: 'Me', color: '#3d5af1', tint: '#3d5af108', items: myPicked }];
+    if (alexItems.length) myRaw.push({ label: 'Alex', color: this.ALEX.color, tint: '#8b5cf60a', items: alexItems });
+    const mydayHas = myPicked.length + alexItems.length > 0;
+    const my = st.tab === 'myday' && mydayHas ? this.renderCols(myRaw, st.myCompact, it => it.i && this.setState({ detail: it.i })) : { cols: [], gutter: [], gutterSt: {} };
+
+    const tierList = ['FCS', 'FC', 'E', 'D'];
+    const dayTracks = [...new Set(daySess.flatMap(s => s.tr))].sort();
+    const activeFilterCount = inc.length + exc.length + (st.onlyPicks ? 1 : 0);
+
+    const wide = !!st.wide;
+    return {
+      shellSt: {
+        maxWidth: wide ? 1100 : 402, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column',
+        background: '#f5f6f8', boxShadow: '0 0 40px rgba(32,36,44,.12)', position: 'relative', color: '#20242c'
+      },
+      listWrapSt: {
+        flex: 1, overflowY: 'auto', padding: '2px 18px 20px', display: 'grid',
+        gridTemplateColumns: wide ? 'repeat(2, minmax(0, 1fr))' : '1fr', gap: 10, alignContent: 'start'
+      },
+      confName: 'SIGGRAPH 2026',
+      statusLine: `${pickCount} picked`,
+      conflictCount: conflictCount ? `${conflictCount} in` : '',
+      isBrowse: st.tab === 'browse', isMyday: st.tab === 'myday',
+      tabBrowse: () => this.setState({ tab: 'browse' }),
+      tabMyday: () => this.setState({ tab: 'myday' }),
+      tabBrowseSt: { ...this.seg(st.tab === 'browse'), flex: 1, padding: '8px 0', borderRadius: 10, font: "600 13px 'Instrument Sans'" },
+      tabMydaySt: { ...this.seg(st.tab === 'myday'), flex: 1, padding: '8px 0', borderRadius: 10, font: "600 13px 'Instrument Sans'" },
+      days: this.DAYS.map(d => {
+        const active = d.key === day;
+        const cnt = this.SESS.filter(s => s.d === d.key && st.picks[s.i]).length;
+        return {
+          label: d.label, date: d.date, count: cnt && st.tab === 'myday' ? String(cnt) : (cnt ? String(cnt) : ''),
+          onClick: () => this.setState({ day: d.key }),
+          st: {
+            flex: 'none', position: 'relative', padding: '8px 14px', border: 'none', borderRadius: 12, cursor: 'pointer',
+            textAlign: 'center', background: active ? '#3d5af1' : '#fff',
+            boxShadow: active ? 'none' : '0 1px 3px rgba(32,36,44,.06)', display: 'flex', flexDirection: 'column', gap: 1
+          },
+          labSt: { font: active ? "700 13px 'Instrument Sans'" : "600 13px 'Instrument Sans'", color: active ? '#fff' : '#7a8090' },
+          dateSt: { font: "500 11px 'Instrument Sans'", color: active ? '#c3cdfb' : '#aab0bd' }
+        };
+      }),
+      search: st.search,
+      onSearch: e => this.setState({ search: e.target.value }),
+      onFilters: () => this.setState({ filtersOpen: true }),
+      filterBtnSt: {
+        flex: 'none', padding: '10px 15px', border: 'none', borderRadius: 12, cursor: 'pointer',
+        background: activeFilterCount ? '#3d5af1' : '#fff', color: activeFilterCount ? '#fff' : '#4a5060',
+        font: "600 12.5px 'Instrument Sans'", boxShadow: '0 1px 3px rgba(32,36,44,.06)'
+      },
+      filterCountLabel: activeFilterCount ? ` · ${activeFilterCount}` : '',
+      setAxisList: () => this.setState({ axis: 'list' }),
+      setAxisTl: () => this.setState({ axis: 'tl' }),
+      group: st.group,
+      onGroup: e => this.setState({ group: e.target.value }),
+      groupOptions: this.FACETS.map(f => ({ value: f.value, label: f.label })),
+      groupSelSt: {
+        padding: '7px 10px', border: 'none', borderRadius: 10, cursor: 'pointer',
+        font: "600 11.5px 'Instrument Sans'", color: st.group === 'all' ? '#7a8090' : '#20242c',
+        background: '#fff', boxShadow: '0 1px 2px rgba(32,36,44,.1)', outline: 'none', appearance: 'auto'
+      },
+      axisListSt: this.seg(!isTl), axisTlSt: this.seg(isTl),
+      isTl,
+      toggleCompact: () => this.setState(p => ({ compact: !p.compact })),
+      compactSt: {
+        padding: '7px 12px', borderRadius: 99, cursor: 'pointer', font: "600 11.5px 'Instrument Sans'",
+        border: st.compact ? 'none' : '1.5px solid #d5d9e2', background: st.compact ? '#20242c' : 'transparent',
+        color: st.compact ? '#fff' : '#7a8090'
+      },
+      countLine: `${filtered.length} of ${daySess.length} sessions`,
+      showListAll: !isTl && !facet.key, showListTrack: !isTl && !!facet.key, showTl: isTl,
+      cards: (!isTl && !facet.key) ? filtered.map(s => cardFor(s, false)) : [],
+      emptyList: !isTl && !facet.key && filtered.length === 0,
+      trackCols,
+      tlCols: tl.cols, tlGutter: tl.gutter, tlGutterSt: tl.gutterSt,
+      // my day
+      onLoad: () => this.setState({ importOpen: true, importChoice: 'replace' }),
+      onShare: () => this.toast('Share file saved to Downloads'),
+      toggleMyCompact: () => this.setState(p => ({ myCompact: !p.myCompact })),
+      myCompactSt: {
+        padding: '8px 13px', borderRadius: 99, cursor: 'pointer', font: "600 12px 'Instrument Sans'",
+        border: st.myCompact ? 'none' : '1.5px solid #d5d9e2', background: st.myCompact ? '#20242c' : 'transparent',
+        color: st.myCompact ? '#fff' : '#7a8090'
+      },
+      staleColumn: st.tab === 'myday' && alexItems.length > 0,
+      mydayEmpty: st.tab === 'myday' && !mydayHas,
+      mydayHas: st.tab === 'myday' && mydayHas,
+      myCols: my.cols, myGutter: my.gutter, myGutterSt: my.gutterSt,
+      // filters sheet
+      filtersOpen: st.filtersOpen,
+      closeSheets: () => this.setState({ filtersOpen: false, settingsOpen: false }),
+      clearFilters: () => this.setState({ trackModes: {}, onlyPicks: false, search: '' }),
+      toggleOnly: () => this.setState(p => ({ onlyPicks: !p.onlyPicks })),
+      onlySt: { display: 'flex', alignItems: 'center', gap: 9, marginTop: 14, border: 'none', background: 'none', cursor: 'pointer', font: "600 13px 'Instrument Sans'", color: '#20242c', padding: 0 },
+      onlyBoxSt: {
+        width: 20, height: 20, borderRadius: 6, display: 'grid', placeItems: 'center', fontSize: 11, color: '#fff',
+        border: st.onlyPicks ? 'none' : '1.5px solid #d5d9e2', background: st.onlyPicks ? '#3d5af1' : 'transparent'
+      },
+      onlyChk: st.onlyPicks ? '✓' : '',
+      filterTracks: dayTracks.map(t => {
+        const mode = st.trackModes[t];
+        const c = this.TC[t] || '#64748b';
+        return {
+          label: t, count: String(daySess.filter(s => s.tr.includes(t)).length),
+          onClick: () => this.setState(p => {
+            const m = { ...p.trackModes };
+            m[t] = m[t] === 'inc' ? 'exc' : m[t] === 'exc' ? undefined : 'inc';
+            if (!m[t]) delete m[t];
+            return { trackModes: m };
+          }),
+          st: {
+            padding: '7px 12px', borderRadius: 99, cursor: 'pointer', font: "600 12px 'Instrument Sans'",
+            border: mode ? 'none' : '1.5px solid #e8eaef',
+            background: mode === 'inc' ? c : mode === 'exc' ? '#fee2e2' : '#fff',
+            color: mode === 'inc' ? '#fff' : mode === 'exc' ? '#b91c1c' : '#4a5060',
+            textDecoration: mode === 'exc' ? 'line-through' : 'none'
+          },
+          cntSt: { font: "500 11px 'Instrument Sans'", opacity: .65 }
+        };
+      }),
+      // settings
+      settingsOpen: st.settingsOpen,
+      onSettings: () => this.setState({ settingsOpen: true }),
+      tiers: tierList.map(t => ({
+        label: t,
+        onClick: () => this.setState({ tier: t }),
+        st: {
+          flex: 1, padding: '9px 0', borderRadius: 10, cursor: 'pointer', font: "700 12.5px 'Instrument Sans'",
+          border: st.tier === t ? 'none' : '1.5px solid #e8eaef',
+          background: st.tier === t ? '#20242c' : '#fff', color: st.tier === t ? '#fff' : '#4a5060'
+        }
+      })),
+      onBackup: () => this.toast('Backup saved to your Downloads folder'),
+      onIcs: () => this.toast(`.ics exported — ${pickCount} events, stable UIDs`),
+      // warn
+      warnOpen: !!st.warn,
+      warnText: st.warn ? `“${st.warn.t}” requires ${st.warn.a.join(' or ')}. Your badge is ${st.tier} — badges get upgraded and sessions open up, so you can keep it on your list.` : '',
+      cancelWarn: () => this.setState({ warn: null }),
+      confirmWarn: () => this.addPick(st.warn),
+      toast: st.toast,
+      ...this.changeVals(),
+      ...this.detailVals(overlaps),
+      ...this.importVals()
+    };
+  }
+
+  detailVals(overlaps) {
+    const st = this.state;
+    const s = st.detail ? this.SESS.find(x => x.i === st.detail) : null;
+    if (!s) return { detailOpen: false };
+    const picked = !!st.picks[s.i];
+    const outside = s.a && !s.a.includes(st.tier);
+    const chip = t => {
+      const c = this.TC[t] || '#64748b';
+      return { label: t, st: { font: "600 11px 'Instrument Sans'", color: c, background: c + '14', padding: '3px 9px', borderRadius: 99 } };
+    };
+    return {
+      detailOpen: true,
+      closeDetail: () => this.setState({ detail: null }),
+      dTime: `${this.fmt(s.s)} – ${this.fmt(s.e)}`, dRoom: s.l || '',
+      dTitle: s.t, dChips: s.tr.map(chip),
+      dOverlap: overlaps[s.i] ? `Overlaps “${overlaps[s.i]}”` : '',
+      dHasContribs: s.c.length > 0,
+      dContribs: s.c.map((n, i) => ({ n, u: '#', sep: i < s.c.length - 1 ? ', ' : '' })),
+      dAcc: s.a ? (outside ? `Requires ${s.a.join(' · ')} — your badge is ${st.tier}` : `Included in ${s.a.join(' · ')}`) : '',
+      dAccSt: { font: "500 12px 'Instrument Sans'", color: outside ? '#b45309' : '#7a8090', marginTop: 10 },
+      dDesc: s.desc || '',
+      dPicked: picked,
+      dNotes: st.picks[s.i]?.notes || '',
+      dOnNotes: e => {
+        const v = e.target.value;
+        this.setState(p => ({ picks: { ...p.picks, [s.i]: { ...p.picks[s.i], notes: v } } }));
+      },
+      dOnToggle: () => this.togglePick(s),
+      dStars: picked ? this.starsFor(s.i) : [],
+      dBtn: picked ? 'Remove from my day' : 'Add to my day',
+      dBtnSt: {
+        flex: 1, padding: '11px 0', border: picked ? '1.5px solid #e8eaef' : 'none', borderRadius: 12, cursor: 'pointer',
+        background: picked ? '#fff' : '#3d5af1', color: picked ? '#b91c1c' : '#fff', font: "600 13px 'Instrument Sans'"
+      }
+    };
+  }
+
+  changeVals() {
+    const st = this.state;
+    const changed = st.changes.filter(c => st.picks[c.i]);
+    const ack = id => this.setState(p => ({ changes: p.changes.filter(c => c.i !== id) }));
+    return {
+      hasChanges: changed.length > 0,
+      changeBanner: `Schedule updated — ${changed.length} of your picks changed`,
+      openReview: () => this.setState({ reviewOpen: true }),
+      reviewOpen: st.reviewOpen && changed.length > 0,
+      closeReview: () => this.setState({ reviewOpen: false }),
+      changeItems: changed.map(c => {
+        const s = this.SESS.find(x => x.i === c.i);
+        return {
+          title: s ? s.t : c.i,
+          diffs: c.diffs.map(d => ({ field: d.field, from: d.from, to: d.to })),
+          onAck: () => { ack(c.i); if (changed.length === 1) this.setState({ reviewOpen: false }); }
+        };
+      }),
+      ackAll: () => { this.setState({ changes: [], reviewOpen: false }); this.toast('Snapshots updated — you\u2019re current with 20 Jul data'); },
+      onSimulate: () => {
+        this.setState({
+          settingsOpen: false,
+          changes: [
+            { i: 't4', diffs: [{ field: 'Room', from: 'Petree D', to: 'Petree C' }] },
+            { i: 't3', diffs: [{ field: 'Starts', from: '9:00 AM', to: '9:30 AM' }, { field: 'Ends', from: '10:30 AM', to: '11:00 AM' }] }
+          ]
+        });
+        this.toast('New data version applied — 2 picks affected');
+      }
+    };
+  }
+
+  importVals() {
+    const st = this.state;
+    if (!st.importOpen) return { importOpen: false };
+    const opts = [
+      { v: 'replace', label: "Replace Alex's picks", sub: 'Matched an existing column by sender ID' },
+      { v: 'new', label: 'Create a new column', sub: 'Keep the existing Alex column untouched' }
+    ];
+    return {
+      importOpen: true,
+      importTitle: 'Import a shared schedule',
+      importMeta: 'From “Alex” · 3 picks · made against 14 Jun data',
+      importChoices: opts.map(o => ({
+        label: o.label, sub: o.sub,
+        onClick: () => this.setState({ importChoice: o.v }),
+        st: {
+          display: 'block', width: '100%', textAlign: 'left', padding: '11px 13px', borderRadius: 12, cursor: 'pointer',
+          border: st.importChoice === o.v ? '1.5px solid #3d5af1' : '1.5px solid #e8eaef',
+          background: st.importChoice === o.v ? '#eef1fe' : '#fff', marginTop: 8
+        },
+        dotSt: {
+          display: 'inline-block', width: 14, height: 14, borderRadius: '50%', marginRight: 8, verticalAlign: -2,
+          border: st.importChoice === o.v ? '4.5px solid #3d5af1' : '1.5px solid #d5d9e2', boxSizing: 'border-box', background: '#fff'
+        }
+      })),
+      importNote: 'Replaces the pick set and shared notes only — your label, colour and column order are kept. Hotel/flight extras never travel in share files.',
+      cancelImport: () => this.setState({ importOpen: false }),
+      confirmImport: () => {
+        this.setState({ importOpen: false });
+        this.toast(st.importChoice === 'replace' ? "Alex's column updated — 3 picks replaced" : 'New column “Alex (2)” added');
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
