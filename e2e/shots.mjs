@@ -1,5 +1,5 @@
 import { chromium } from 'playwright'
-const B = 'http://localhost:5173/OpenLineup/'
+const B = 'http://localhost:5173/SessionSamba/'
 const browser = await chromium.launch()
 
 // --- phone, picker ---

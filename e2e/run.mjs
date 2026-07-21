@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const PORT = 4321
-const APP = `http://localhost:${PORT}/OpenLineup/`
+const APP = `http://localhost:${PORT}/SessionSamba/`
 
 const results = []
 let failures = 0
@@ -144,7 +144,7 @@ try {
     const page_bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
     // dark --page is #0d1016 -> rgb(13, 16, 22)
     assert(page_bg === 'rgb(13, 16, 22)', `dark page bg was ${page_bg}`)
-    const stored = await page.evaluate(() => localStorage.getItem('ol:theme'))
+    const stored = await page.evaluate(() => localStorage.getItem('ss:theme'))
     assert(stored === 'dark', `theme not persisted (${stored})`)
     // restore
     await page.getByRole('button', { name: 'system', exact: true }).click()
@@ -187,7 +187,7 @@ try {
 
   await check('the journal is really in IndexedDB, not just memory', async () => {
     const stored = await page.evaluate(() => new Promise((resolve, reject) => {
-      const req = indexedDB.open('openlineup')
+      const req = indexedDB.open('sessionsamba')
       req.onsuccess = () => {
         const db = req.result
         const tx = db.transaction('journals', 'readonly')
@@ -252,7 +252,7 @@ try {
 
   // ---- the share round trip, through a real file picker ----------------
   await check('importing a colleague file adds a column that renders their picks', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ol-'))
+    const dir = mkdtempSync(join(tmpdir(), 'ss-'))
     const file = join(dir, 'alex-picks.json')
     // A different person, with two picks that exist plus one that doesn't.
     const theirs = sessions.filter((s) => s.day === '2026-07-21').slice(40, 42).map((s) => s.id)
@@ -388,7 +388,7 @@ try {
   })
 
   await check('adding a conference by file rebinds the whole app (multi-event)', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'ol-conf-'))
+    const dir = mkdtempSync(join(tmpdir(), 'ss-conf-'))
     const file = join(dir, 'bundle.json')
     writeFileSync(file, JSON.stringify({
       config: {

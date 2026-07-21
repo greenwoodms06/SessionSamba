@@ -2,7 +2,7 @@
 """
 SIGGRAPH 2026 — one-time clean of the copy-pasted schedule xlsx.
 
-Converts the messy source into the OpenLineup format (see SPEC.md).
+Converts the messy source into the SessionSamba format (see SPEC.md).
 Zero dependencies: stdlib zipfile + ElementTree only. Runs offline.
 
 This is a ONE-SHOT adapter. There will be no further versions of the source
@@ -450,7 +450,7 @@ def main():
     out_dir = pathlib.Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    report = [f"OpenLineup — {CONFERENCE_ID} one-time import",
+    report = [f"SessionSamba — {CONFERENCE_ID} one-time import",
               f"source: {args.source}   generatedAt: {generated_at}", ""]
 
     grid, hyperlinks = read_sheet(pathlib.Path(args.source))

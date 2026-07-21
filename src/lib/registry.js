@@ -13,7 +13,7 @@ import {
 } from './storage.js'
 
 const base = import.meta.env.BASE_URL
-const ACTIVE_KEY = 'ol:activeConference'
+const ACTIVE_KEY = 'ss:activeConference'
 
 export function getActiveId() {
   try { return localStorage.getItem(ACTIVE_KEY) } catch { return null }

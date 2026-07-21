@@ -8,9 +8,9 @@
  */
 
 // This key identifies user data on disk — renaming it orphans every saved
-// journal, so treat it as frozen. (It was last changed 2026-07-20, before any
-// real users existed, when the app was renamed to OpenLineup.)
-const DB_NAME = 'openlineup'
+// journal, so treat it as frozen. (It was last changed 2026-07-21, before any
+// real users existed, when the app was renamed to SessionSamba.)
+const DB_NAME = 'sessionsamba'
 const DB_VERSION = 2
 const STORE_JOURNALS = 'journals'       // one record per conference
 const STORE_COLUMNS = 'columns'         // imported colleagues, per conference
@@ -139,7 +139,7 @@ export function downloadFile(filename, contents, mime = 'application/json') {
  * which no browser evicts. This is the strongest durability story available
  * without a server (SPEC sect. 5.3).
  */
-const BACKUP_KEY = 'ol:lastBackup'
+const BACKUP_KEY = 'ss:lastBackup'
 
 export function shouldAutoBackup(now = Date.now(), intervalMs = 12 * 60 * 60 * 1000) {
   try {
@@ -158,7 +158,7 @@ export function markAutoBackup(now = Date.now()) {
   }
 }
 
-const BACKUP_KIND = 'openlineup-backup'
+const BACKUP_KIND = 'sessionsamba-backup'
 
 export async function exportBackup() {
   const journals = await listJournals()

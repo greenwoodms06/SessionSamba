@@ -1,4 +1,4 @@
-OpenLineup — siggraph-2026 one-time import
+SessionSamba — siggraph-2026 one-time import
 source: siggraph2026.xlsx   generatedAt: 2026-07-20T22:19:03Z
 
 Sheet: 1654 rows, 1103 hyperlinks

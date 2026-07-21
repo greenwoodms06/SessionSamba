@@ -146,7 +146,7 @@ export default function App() {
     if (!journal || journal.picks.length === 0) return
     if (!shouldAutoBackup()) return
     exportBackup().then((contents) => {
-      downloadFile(`openlineup-backup-${new Date().toISOString().slice(0, 10)}.json`, contents)
+      downloadFile(`sessionsamba-backup-${new Date().toISOString().slice(0, 10)}.json`, contents)
       markAutoBackup()
       setToast('Backup saved to your Downloads folder.')
     })
@@ -323,7 +323,7 @@ export default function App() {
           onIcs={exportIcs}
           onBackup={async () => {
             downloadFile(
-              `openlineup-backup-${new Date().toISOString().slice(0, 10)}.json`,
+              `sessionsamba-backup-${new Date().toISOString().slice(0, 10)}.json`,
               await exportBackup(),
             )
             markAutoBackup()

@@ -9,7 +9,7 @@ of them — say so rather than silently picking a side.
 
 ## What this is
 
-**OpenLineup**: a portable conference-schedule **format** plus the reference PWA
+**SessionSamba**: a portable conference-schedule **format** plus the reference PWA
 that consumes it — one name for both (see the naming note at the top of
 `SPEC.md`). SIGGRAPH 2026 is the first fixture, not the target. Vite + React,
 GitHub Pages, no server, no accounts.

@@ -2,7 +2,7 @@
  *  so it lives here, not in the journal. 'system' follows the OS; light/dark
  *  force. Applied as data-theme on <html>; the CSS decides the rest. */
 
-const KEY = 'ol:theme'
+const KEY = 'ss:theme'
 export const THEMES = ['system', 'light', 'dark']
 
 export function getTheme() {

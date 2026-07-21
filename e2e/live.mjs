@@ -1,5 +1,5 @@
 import { chromium } from 'playwright'
-const APP = 'https://greenwoodms06.github.io/OpenLineup/'
+const APP = 'https://greenwoodms06.github.io/SessionSamba/'
 const b = await chromium.launch()
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 } })
 const p = await ctx.newPage()

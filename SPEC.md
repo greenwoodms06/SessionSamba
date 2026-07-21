@@ -1,9 +1,10 @@
-# OpenLineup — Format & Architecture Spec
+# SessionSamba — Format & Architecture Spec
 
-**Naming:** OpenLineup is both the app and the format ("the OpenLineup format").
+**Naming:** SessionSamba is both the app and the format ("the SessionSamba format").
 Earlier drafts used two names — MyConferencePlan for the app and
-OpenConferencePlan for the format; that split was collapsed on 2026-07-20. If a
-second implementation ever adopts the format, that is the moment to consider
+OpenConferencePlan for the format; that accidental split was collapsed on
+2026-07-20 (briefly as "OpenLineup", renamed to SessionSamba on 2026-07-21). If
+a second implementation ever adopts the format, that is the moment to consider
 giving the format its own vendor-neutral name again.
 
 **Status:** Draft 1. Captures decisions from the design review of 2026-07-20.

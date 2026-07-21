@@ -1,8 +1,8 @@
-# OpenLineup
+# SessionSamba
 
 An offline-first conference schedule planner, and a **portable schedule format**
-any event can adopt. One name covers both: the app is OpenLineup, and the file
-format it reads is the OpenLineup format (`SPEC.md`).
+any event can adopt. One name covers both: the app is SessionSamba, and the file
+format it reads is the SessionSamba format (`SPEC.md`).
 
 Pick sessions, see time conflicts, compare your day against your colleagues',
 and export to your calendar. No server, no accounts, no tracking. Everything
