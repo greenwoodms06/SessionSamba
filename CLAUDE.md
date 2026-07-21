@@ -7,15 +7,12 @@ what it is, decision by decision, and the code comments reference its section
 numbers (`SPEC sect. 6.3`). If the code and the spec disagree, that's a bug in one
 of them — say so rather than silently picking a side.
 
-`HANDOFF.md` is the original brief. It is **superseded** where it conflicts with
-`SPEC.md` (notably: it proposed a flat `type` field and localStorage; the spec uses
-a `tracks` array and IndexedDB).
-
 ## What this is
 
-A portable conference-schedule **format** plus a reference PWA that consumes it.
-SIGGRAPH 2026 is the first fixture, not the target. Vite + React, GitHub Pages,
-no server, no accounts.
+**OpenLineup**: a portable conference-schedule **format** plus the reference PWA
+that consumes it — one name for both (see the naming note at the top of
+`SPEC.md`). SIGGRAPH 2026 is the first fixture, not the target. Vite + React,
+GitHub Pages, no server, no accounts.
 
 ## Invariants — breaking these breaks user data
 
@@ -44,8 +41,8 @@ fails on one of these, the change is wrong, not the test.
 
 ```bash
 npm run dev            # dev server
-npm test               # 34 logic + 19 component tests
-npm run test:e2e       # 15 real-browser checks (needs: npx playwright install chromium)
+npm test               # 34 logic + 23 component tests
+npm run test:e2e       # 21 real-browser checks (needs: npx playwright install chromium)
 npm run shots          # screenshots -> e2e/shots/ (gitignored)
 npm run build          # -> dist/
 npm run import:siggraph  # regenerate public/data from the xlsx
@@ -83,7 +80,6 @@ e2e/             Playwright, self-contained (starts its own server)
 
 - Topic tags are seeded from titles only (54% coverage) — the source has no
   abstracts. Real enrichment means mining session URLs.
-- Multi-conference switching is designed but not built.
 - Never tested on physical iOS/Android. The storage-eviction behaviour that drove
   the whole durability design is a Safari/iOS thing, and headless Chromium can't
   stand in for it.

@@ -11,7 +11,7 @@ function short(text) {
 }
 
 /**
- * Companion session card (design §4). State lives in the RING, never a
+ * Session card. State lives in the RING, never a
  * background swap: picked = accent ring + filled check; an unpicked card that
  * conflicts gets an amber ring. Tapping the title opens the detail sheet.
  */

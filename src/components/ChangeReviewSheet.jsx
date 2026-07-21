@@ -3,7 +3,7 @@ import { formatTime } from '../lib/time.js'
 const FIELD_LABEL = { title: 'Title', start: 'Starts', end: 'Ends', location: 'Room' }
 
 /**
- * "Your picks changed" bottom sheet (design §Change detection). Per-pick cards
+ * "Your picks changed" bottom sheet. Per-pick cards
  * with field-level diffs; acknowledging overwrites the snapshot so a pick never
  * re-flags (SPEC §5.2). Cancelled picks are shown too — never silently dropped
  * (SPEC §1.5) — with a Remove action.

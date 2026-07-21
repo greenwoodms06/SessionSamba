@@ -1,6 +1,5 @@
-/** Shared column-timeline layout (ported from the Companion prototype's
- *  layout() / renderCols()). Drives both Browse→Timeline and My day: the only
- *  difference is what a column represents (track / room / person).
+/** Shared column-timeline layout. Drives both Browse→Timeline and My day:
+ *  the only difference is what a column represents (track / room / person).
  *
  *  Two ideas:
  *   - Gap compression: break the day at every session edge + hour mark; a

@@ -3,7 +3,7 @@ import { addConferenceFromFile, addConferenceFromUrl } from '../lib/registry.js'
 import { loadJournal } from '../lib/storage.js'
 
 /**
- * "Your conferences" sheet (design §Conference switcher). Each event keeps its
+ * "Your conferences" bottom sheet. Each event keeps its
  * own schedule, picks and notes keyed by conferenceId — switching never touches
  * the others. Bundled and user-added conferences appear together; the footer
  * adds a new one by URL or bundle file.

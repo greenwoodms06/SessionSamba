@@ -3,7 +3,7 @@ import { formatTime, fromMinutes, toMinutes } from '../lib/time.js'
 import { trackColor } from '../lib/palette.js'
 
 /**
- * Shared column-timeline (Companion design). Renders a proportional, gap-
+ * Shared column-timeline. Renders a proportional, gap-
  * compressed time axis with one column per track / room / person. All columns
  * share one time→Y map so rows align across them — which is what makes gaps and
  * overlaps between people legible in My day.

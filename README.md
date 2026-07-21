@@ -17,12 +17,12 @@ First fixture: **SIGGRAPH 2026** (Los Angeles, 19–23 July 2026, 487 sessions).
 ```bash
 npm install
 npm run dev          # http://localhost:5173
-npm test             # 34 logic + 22 component tests
+npm test             # 34 logic + 23 component tests
 npm run build        # -> dist/
 
 # Real-browser tests (Chromium via Playwright). First run only:
 npx playwright install chromium
-npm run test:e2e     # 20 end-to-end checks, starts its own server
+npm run test:e2e     # 21 end-to-end checks, starts its own server
 npm run shots        # screenshots -> e2e/shots/
 ```
 
@@ -124,8 +124,9 @@ asks the browser to mark that storage persistent.
 **Browsers can still evict it.** Safari clears script-writable storage after a
 period without interaction, and Chrome evicts under storage pressure. Since your
 notes can't be regenerated, the app writes a **backup file to your Downloads
-folder** — which no browser clears — and Settings has a "Download a backup now"
-button. Use it.
+folder** — which no browser clears — and Settings has "Back up now" and
+"Restore a backup…" buttons. Restoring is non-destructive: a stored journal is
+only replaced when the file's copy is newer.
 
 ### What leaves your device
 
@@ -159,13 +160,13 @@ SPEC.md            the format and architecture spec — read this first
 
 ## Testing
 
-Three layers, 76 checks total:
+Three layers, 78 checks total:
 
 | Suite | What it covers |
 |---|---|
 | `tests/lib.test.js` (34) | Identity, conflicts, `.ics`, share resolution, journal diffing — plus invariants on the real 487-session dataset, so a bad data regenerate fails the build |
-| `tests/components.test.jsx` (22) | Every component rendered against real data (incl. the conference switcher) |
-| `e2e/run.mjs` (20) | Real Chromium: IndexedDB persistence, `.ics` download, share round-trip, Browse view-model, detail sheet, dark theme, conference add/switch, offline via service worker |
+| `tests/components.test.jsx` (23) | Every component rendered against real data (incl. the conference switcher) |
+| `e2e/run.mjs` (21) | Real Chromium: IndexedDB persistence, `.ics` download, share round-trip, backup restore onto a fresh device, Browse view-model, detail sheet, dark theme, conference add/switch, offline via service worker |
 
 ## Status
 
@@ -174,8 +175,8 @@ the notable one is that topic tags are seeded from titles only (54% coverage),
 because the SIGGRAPH source has no abstracts. Real enrichment means mining each
 session's URL.
 
-The full Companion design is adopted. Remaining: a pass on physical iOS/Android
-hardware (Chromium headless is not a substitute for real Safari).
+Remaining: a pass on physical iOS/Android hardware (Chromium headless is not a
+substitute for real Safari).
 
 ## License
 

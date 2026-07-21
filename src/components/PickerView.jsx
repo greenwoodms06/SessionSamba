@@ -6,7 +6,7 @@ import { trackColor } from '../lib/palette.js'
 
 /**
  * Browse view. Two orthogonal controls give four modes from one shared
- * column-timeline component (Companion design):
+ * column-timeline component:
  *   Axis:  List | Timeline
  *   Group: Everything | By track | By room   (facets, config-declarable)
  *

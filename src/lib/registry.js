@@ -1,4 +1,4 @@
-/** Conference registry. The app is multi-event (design §Conference switcher):
+/** Conference registry. The app is multi-event:
  *  every conference keeps its own schedule, picks and notes, keyed by
  *  conferenceId — switching never touches the others.
  *

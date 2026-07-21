@@ -1,7 +1,6 @@
-/* MyConferencePlan — "Companion" visual system.
-   Adopted from the claude.ai/design handoff (design/). Tokens, type, spacing,
-   radii and states are the design's final values. Single committed light theme
-   (the design does not define a dark variant). */
+/* OpenLineup visual system — ALL styling lives in this one file.
+   Light and dark themes via tokens on :root[data-theme]; a visual redesign
+   should be possible by editing this file alone. */
 
 :root {
   /* neutrals */

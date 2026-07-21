@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 import { toMinutes, zonedToUtcMs, toIcsUtc, formatTime } from '../src/lib/time.js'
-import { overlaps, findConflicts, isAncestor, assignLanes } from '../src/lib/overlap.js'
+import { overlaps, findConflicts, isAncestor } from '../src/lib/overlap.js'
+import { layout } from '../src/lib/timeline.js'
 import { buildIcs, escapeText, foldLine, unfold } from '../src/lib/ics.js'
 import {
   buildShareFile, resolveShareFile, buildResolver, matchExistingColumn, applyOverwrite,
@@ -46,7 +47,7 @@ test('dataset: all five days present, including implicit Sunday and Thursday', (
     '2026-07-20': 108,
     '2026-07-21': 123,
     '2026-07-22': 121,
-    '2026-07-23': 74,  // out of HANDOFF's original scope, deliberately included
+    '2026-07-23': 74,  // out of the original brief's scope, deliberately included
   })
 })
 
@@ -156,12 +157,11 @@ test('overlap: real data — Tuesday peak concurrency is 36', () => {
   assert.equal(peak, 36)
 })
 
-test('overlap: lanes never double-book a lane within a cluster', () => {
-  const layout = assignLanes([A, B, C])
-  const laneOf = (id) => layout.get(id).lane
+test('timeline: lanes never double-book a lane within a column', () => {
+  const L = layout([{ key: 'k', label: 'K', color: '#000', items: [A, B, C] }])
+  const laneOf = (id) => L.columns[0].blocks.find((b) => b.item.id === id).lane
   assert.notEqual(laneOf('a'), laneOf('b'), 'overlapping sessions get distinct lanes')
   assert.equal(laneOf('a'), laneOf('c'), 'non-overlapping sessions reuse a lane')
-  for (const s of [A, B, C]) assert.ok(layout.get(s.id).lanes >= 1)
 })
 
 // --------------------------------------------------------------------------

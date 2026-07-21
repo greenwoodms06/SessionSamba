@@ -7,7 +7,8 @@ second implementation ever adopts the format, that is the moment to consider
 giving the format its own vendor-neutral name again.
 
 **Status:** Draft 1. Captures decisions from the design review of 2026-07-20.
-**Supersedes:** the schema sketch in `HANDOFF.md`. Where the two disagree, this wins.
+**Supersedes:** the schema sketch in the original project brief (`HANDOFF.md`,
+deleted once its tasks were done). Where the two disagreed, this won.
 
 ---
 
@@ -463,7 +464,7 @@ Columns: `Time | Type | Session | Contributors | Location | Access | (G, empty)`
    **not identical**: row 1 reads `Session` / `Access`; the rest read
    `Session / Presentation` / `Tag` and add an empty `Plan` column. A header filter
    matching only the first form lets four rows through.
-4. **Thursday 23 July is present** (74 sessions). `HANDOFF.md` scoped Sun–Wed.
+4. **Thursday 23 July is present** (74 sessions). The original brief scoped Sun–Wed.
    Decision: **include it** — clean all five days.
 5. **2235 merged ranges are vertical spills.** A session occupies N rows; extra rows
    carry additional `Contributors` and additional `Access` tiers with all other cells
@@ -475,11 +476,11 @@ Columns: `Time | Type | Session | Contributors | Location | Access | (G, empty)`
 7. **Times are NBSP-separated with a TZ suffix**: `"9:00am - 12:15pm PDT"`.
    Normalise to 24h `start`/`end`; timezone comes from config.
 8. **28 distinct `Type` values** → these become `track`. Largest is **Birds of a
-   Feather (102)**, which appears in neither `HANDOFF.md`'s fallback nor its five
+   Feather (102)**, which appears in neither the original brief's fallback nor its five
    tracks. `config.tracks` must default gracefully for undeclared values.
 9. **No description and no keywords column exist.** Titles are 3–6 words
    (*"Speedy 3D"*, *"Numerical Geometry a la Mode"*). The `keywordsBoost` list in
-   `HANDOFF.md` will match almost nothing. Recommendations are near-inert on this
+   the original brief will match almost nothing. Recommendations are near-inert on this
    dataset until tags are enriched from the session URLs.
 10. **Cross-listing is real.** 18 sessions carry more than one track — a joint event
     lists one track per participating community on successive spill rows
@@ -520,9 +521,10 @@ collaborative view ships.
    Papers). `config.tracks` is optional presentation metadata only.
 2. **Access tier UI: grey out vs filter out.** Starting with grey-out (non-destructive,
    easier). Filter-out remains a user option later.
-3. **Multi-conference bundle growth.** Every past year's `sessions.json` stays in the
-   service worker precache forever. Needs a strategy: lazy-load non-active conferences,
-   or precache only the active one.
+3. ~~Multi-conference bundle growth~~ — **resolved.** The service worker precaches
+   only the shell + the default conference; other bundles load on demand and
+   cache at runtime (stale-while-revalidate), so the offline footprint does not
+   grow with every conference in the repo.
 4. **Recommendation enrichment.** URL-mining for tags is a plan, not a design — no owner,
    no schedule, no determinism story beyond §4.2. Feature is inert until it lands.
 5. **Undo for a mis-targeted import overwrite.** No server, no undo stack today.
@@ -561,5 +563,7 @@ download with unique scoped UIDs, share round-trip through a real file picker
 including the ghost state for a cancelled pick, badge-tier marking without
 hiding, and offline load from the service worker.
 
-Remaining: real tag enrichment (open question #4), multi-conference switching
-(open question #3), and a pass on physical iOS/Android hardware.
+Multi-conference switching is also **done** (per-conference data folders, an
+`index.json` manifest, the in-app switcher, add-by-file/URL cached in
+IndexedDB). Remaining: real tag enrichment (open question #4) and a pass on
+physical iOS/Android hardware.

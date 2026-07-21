@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 
-/** Settings — bottom sheet (Companion design). Badge tier, display name, and an
+/** Settings bottom sheet. Badge tier, display name, and an
  *  honest storage report (the journal holds hand-authored notes browsers can
  *  evict; telling the user beats silent data loss — SPEC §5.3). */
 export default function SettingsPanel({

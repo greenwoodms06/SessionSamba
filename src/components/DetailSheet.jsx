@@ -5,7 +5,7 @@ import Stars from './Stars.jsx'
 
 const stop = (e) => e.stopPropagation()
 
-/** Session detail bottom sheet (Companion design). Opened by tapping a card
+/** Session detail bottom sheet. Opened by tapping a card
  *  title or a timeline block. Carries the session URL as "Session page ↗". */
 export default function DetailSheet({
   session, config, picked, overlapWith, tier, note, rating,
